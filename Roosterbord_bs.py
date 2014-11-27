@@ -159,8 +159,7 @@ def makeExcell(bestand, data):
                     worksheet.write(x+start_row, y+start_col, rooster[y-1][x+1]['klas']+" "+rooster[y-1][x+1]['lokaal'])
 
         for x, melding in enumerate(meldingen.split("\n")):
-             worksheet.write(x+start_row+9, 0, melding)
-
+            worksheet.write(x+start_row+9, 0, melding)
     workbook.close()
 
 if __name__=="__main__":
