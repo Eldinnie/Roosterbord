@@ -95,11 +95,11 @@ def processRooster(raw):
     vrij = [x.string.strip().split(", ") for x in soup.find_all("td",{"class":"vrij"})]
     med = [x.string.strip().split(", ") for x in soup.find_all("td",{"class":"mededeling"})]
     lesarr = []
-    lesarr.append(lessen[::2])
-    lesarr.append(lessen[1::2])
+    lesarr.append(lessen[:8:2]+lessen[1:8:2])
+    lesarr.append(lessen[8::2]+lessen[9::2])
     vrijarr=[]
-    vrijarr.append(vrij[::2])
-    vrijarr.append(vrij[1::2])
+    vrijarr.append(vrij[:8:2]+vrij[1:8:2])
+    vrijarr.append(vrij[8::2]+vrij[9::2])
     dag1 = lesdag(dates[0],bijgewerkt[0],afwezigen[0], lesarr[0], vrijarr[0], med[0])
     dag2 = lesdag(dates[1],bijgewerkt[1],afwezigen[1], lesarr[1], vrijarr[1], med[1])
     return dag1, dag2
