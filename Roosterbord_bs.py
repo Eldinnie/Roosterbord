@@ -18,7 +18,9 @@ wijzmatch2 = re.compile(r"^([0-9]+)([A-Z]+) \([A-Z]{1}[a-z]{1}\) (.{3})$")
 class lesdag():
     def __init__(self,datum, bijgewerkt, afwezigen, wijzigingen, vrij, med):
         self.rooster = {1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{}}
-        self.mededelingen=["Hele dag "+med[0]]
+        self.mededelingen=[]
+        if med[0] != u"":
+            self.mededelingen.append("Hele dag "+med[0])
         self.datum = self._make_date(datum)
         self.bijgewerkt = self._make_date(bijgewerkt)
         self.afwezigen = afwezigen
@@ -35,8 +37,12 @@ class lesdag():
             tmp= datetime.datetime(int(tmp.groups()[2]),maanden[tmp.groups()[1]],int(tmp.groups()[0]))
         return tmp
 
-    def getDateString(self):
-        return self.datum.strftime("%A %d %B")
+    def getDateString(self, hours=False):
+        if hours:
+            return self.bijgewerkt.strftime("%A %d %B - %H:%M")
+        else:
+            return self.datum.strftime("%A %d %B")
+
 
     def _compile_vrij(self, vrij):
         for uur,vrij in enumerate(vrij):
@@ -117,8 +123,8 @@ def checkDayToRooster(dag,rooster):
             except KeyError:
                 pass
             try:
-                if wijz['vak'] == rooster['vak'] and wijz['klas'] != roosterdag[uur]['klas']:
-                    meldingen += "%s uur %d heeft klas %s NA in lokaal %s. Rooster zegt %s NA in lokaal %s\n" % (dag.getDateString(), uur, wijz['klas'], wijz['lokaal'], roosterdag[uur]['klas'], roosterdag[uur]['lokaal'])
+                if wijz['vak'] == roosterdag[uur]['vak'] and wijz['klas'] != roosterdag[uur]['klas']:
+                    meldingen += "%s uur %d heeft klas %s %s in lokaal %s. Rooster zegt %s %s in lokaal %s\n" % (dag.getDateString(), uur, wijz['klas'], wijz['vak'],  wijz['lokaal'], roosterdag[uur]['klas'], roosterdag[uur]['vak'], roosterdag[uur]['lokaal'])
                     rooster[dag.datum.weekday()][uur]['klas']= "!"+rooster[dag.datum.weekday()][uur]['klas']
             except KeyError:
                 pass
@@ -130,7 +136,7 @@ def checkDayToRooster(dag,rooster):
 
 # Create an new Excel file and add a worksheet.
 
-def makeExcell(bestand, data):
+def makeExcell(bestand, data, bijgewerkt):
     workbook = xlsxwriter.Workbook(bestand)
     for rooster,meldingen in data:
         worksheet = workbook.add_worksheet(rooster['naam'])
@@ -140,6 +146,7 @@ def makeExcell(bestand, data):
                                    'font_color': '#9C0006'})
 
         worksheet.write('A1', rooster['naam'])
+        worksheet.write('B1', bijgewerkt)
         worksheet.write('A2', 'Uur', bold)
         worksheet.write('B2', 'Maandag', bold)
         worksheet.write('C2', 'Dinsdag', bold)
@@ -154,9 +161,9 @@ def makeExcell(bestand, data):
             worksheet.write(x+start_row, 0, str(x+1))
             for y in range(1,6):
                 if rooster[y-1][x+1]['klas'][:1]=="!":
-                    worksheet.write(x+start_row, y+start_col, rooster[y-1][x+1]['klas'][1:]+" "+rooster[y-1][x+1]['lokaal'],red_shade)
+                    worksheet.write(x+start_row, y+start_col, rooster[y-1][x+1]['klas'][1:]+" "+rooster[y-1][x+1]['vak']+" "+rooster[y-1][x+1]['lokaal'],red_shade)
                 else:
-                    worksheet.write(x+start_row, y+start_col, rooster[y-1][x+1]['klas']+" "+rooster[y-1][x+1]['lokaal'])
+                    worksheet.write(x+start_row, y+start_col, rooster[y-1][x+1]['klas']+" "+rooster[y-1][x+1]['vak']+" "+rooster[y-1][x+1]['lokaal'])
 
         for x, melding in enumerate(meldingen.split("\n")):
             worksheet.write(x+start_row+9, 0, melding)
@@ -173,9 +180,10 @@ if __name__=="__main__":
     for rooster in lesroosters:
         rooster, meldingen =  checkDayToRooster(dag1, rooster)
         rooster, meldingen2 = checkDayToRooster(dag2, rooster)
-        printRooster(rooster)
         meldingen += meldingen2
-        print "bijgwerkt op: "+str(dag1.bijgewerkt)
-        print meldingen or "Niets te melden"
+#         printRooster(rooster)
+#         print "bijgwerkt op: "+str(dag1.bijgewerkt)
+#         print meldingen or "Niets te melden"
         voorExcell.append((rooster, meldingen))
-    makeExcell(bestand, voorExcell)
+        bijgewerkt = dag1.getDateString(hours=True)
+    makeExcell(bestand, voorExcell, bijgewerkt)
