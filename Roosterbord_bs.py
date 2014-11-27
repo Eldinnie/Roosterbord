@@ -58,7 +58,7 @@ class lesdag():
             self.rooster[uur+1]["wijzigingen"] = tmp
 
 def printRooster(ros):
-    print "Lesrooster\n"+"-"*20
+    print ros['naam']+"\n"+"-"*20
     print "Uur\tMa\tDi\tWo\tDo\tVrij"
     for x in range(1,9):
         tmp=[]
@@ -130,35 +130,36 @@ def checkDayToRooster(dag,rooster):
 
 # Create an new Excel file and add a worksheet.
 
-def makeExcell(bestand, rooster,mededelingen):
+def makeExcell(bestand, data):
     workbook = xlsxwriter.Workbook(bestand)
-    worksheet = workbook.add_worksheet()
-    worksheet.set_column('A:F', 15)
-    bold = workbook.add_format({'bold': True})
-    red_shade = workbook.add_format({'bg_color': '#FFC7CE',
-                               'font_color': '#9C0006'})
+    for rooster,meldingen in data:
+        worksheet = workbook.add_worksheet(rooster['naam'])
+        worksheet.set_column('A:F', 15)
+        bold = workbook.add_format({'bold': True})
+        red_shade = workbook.add_format({'bg_color': '#FFC7CE',
+                                   'font_color': '#9C0006'})
 
-    worksheet.write('A1', rooster['naam'])
-    worksheet.write('A2', 'Uur', bold)
-    worksheet.write('B2', 'Maandag', bold)
-    worksheet.write('C2', 'Dinsdag', bold)
-    worksheet.write('D2', 'Woensdag', bold)
-    worksheet.write('E2', 'Donderdag', bold)
-    worksheet.write('F2', 'Vrijdag', bold)
+        worksheet.write('A1', rooster['naam'])
+        worksheet.write('A2', 'Uur', bold)
+        worksheet.write('B2', 'Maandag', bold)
+        worksheet.write('C2', 'Dinsdag', bold)
+        worksheet.write('D2', 'Woensdag', bold)
+        worksheet.write('E2', 'Donderdag', bold)
+        worksheet.write('F2', 'Vrijdag', bold)
 
-    start_row = 2
-    start_col = 0
+        start_row = 2
+        start_col = 0
 
-    for x in range(0,8):
-        worksheet.write(x+start_row, 0, str(x+1))
-        for y in range(1,6):
-            if rooster[y-1][x+1]['klas'][:1]=="!":
-                worksheet.write(x+start_row, y+start_col, rooster[y-1][x+1]['klas'][1:]+" "+rooster[y-1][x+1]['lokaal'],red_shade)
-            else:
-                worksheet.write(x+start_row, y+start_col, rooster[y-1][x+1]['klas']+" "+rooster[y-1][x+1]['lokaal'])
+        for x in range(0,8):
+            worksheet.write(x+start_row, 0, str(x+1))
+            for y in range(1,6):
+                if rooster[y-1][x+1]['klas'][:1]=="!":
+                    worksheet.write(x+start_row, y+start_col, rooster[y-1][x+1]['klas'][1:]+" "+rooster[y-1][x+1]['lokaal'],red_shade)
+                else:
+                    worksheet.write(x+start_row, y+start_col, rooster[y-1][x+1]['klas']+" "+rooster[y-1][x+1]['lokaal'])
 
-    for x, melding in enumerate(meldingen.split("\n")):
-         worksheet.write(x+start_row+9, 0, melding)
+        for x, melding in enumerate(meldingen.split("\n")):
+             worksheet.write(x+start_row+9, 0, melding)
 
     workbook.close()
 
@@ -169,10 +170,13 @@ if __name__=="__main__":
         bestand = "rooster.xlsx"
     raw = UpdateFromWeb()
     dag1, dag2 = processRooster(raw)
-    rooster, meldingen =  checkDayToRooster(dag1, lesroosters[1])
-    rooster, meldingen2 = checkDayToRooster(dag2, rooster)
-    printRooster(rooster)
-    meldingen += meldingen2
-    print "bijgwerkt op: "+str(dag1.bijgewerkt)
-    print meldingen or "Niets te melden"
-    makeExcell(bestand, rooster, meldingen)
+    voorExcell = []
+    for rooster in lesroosters:
+        rooster, meldingen =  checkDayToRooster(dag1, rooster)
+        rooster, meldingen2 = checkDayToRooster(dag2, rooster)
+        printRooster(rooster)
+        meldingen += meldingen2
+        print "bijgwerkt op: "+str(dag1.bijgewerkt)
+        print meldingen or "Niets te melden"
+        voorExcell.append((rooster, meldingen))
+    makeExcell(bestand, voorExcell)
